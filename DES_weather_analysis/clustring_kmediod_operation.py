@@ -43,11 +43,11 @@ def kmedoid_clusters(path_test,mode):
     thermal_eff_dict= {}
     weight_factor={}
     for i in range(int(editable_data['number_buildings'])):
-        if 'building_name_'+str(i) in editable_data.keys():
-            building_name = editable_data['building_name_1']
+        if 'building_name_'+str(i+1) in editable_data.keys():
+            building_name = editable_data['building_name_'+str(i+1)]
             idf_names.append(building_name)
-            thermal_eff_dict[building_name]=float(editable_data['thermal_eff_'+str(i)])
-            weight_factor[building_name]=float(editable_data['WF_'+str(i)])
+            thermal_eff_dict[building_name]=float(editable_data['thermal_eff_'+str(i+1)])
+            weight_factor[building_name]=float(editable_data['WF_'+str(i+1)])
 
     #idf_names=idf_names[1:2]
     start_year = int(editable_data['starting_year'])
@@ -64,7 +64,7 @@ def kmedoid_clusters(path_test,mode):
     list_years = []
     list_tmys =[]
     list_fmys = []
-    for year in range(start_year,end_year+1):
+    for year in reversed(range(start_year,end_year+1)):
         weather_data = city+'_'+str(lat)+'_'+str(lon)+'_psm3_60_'+str(year)
         list_years.append(weather_data)
     for i in range(5):
@@ -470,6 +470,7 @@ def kmedoid_clusters(path_test,mode):
                 data = pd.read_csv(demand_data_path)
                 elect_data = ((data['Electricity:Facility [J](Hourly)']-data['Heating:Electricity [J](Hourly)'])*JtokWh)
                 heat_data = (data['Gas:Facility [J](Hourly)']*thermal_eff_dict[building_type]+data['Heating:Electricity [J](Hourly)'])*JtokWh
+                #print(output_prefix,elect_data,heat_data )
                 #data['Total Electricity']=elect_data
                 #data['Total Heating']=heat_data
                 scenario_generated_main[building_type].append(data)
@@ -499,12 +500,15 @@ def kmedoid_clusters(path_test,mode):
                     scenario_generated_main[building_type][j]['Total Heating']=gas_buildings_main[building_type][j]*weight_factor[building_type]
                     scenario_reduction_per_year(scenario_generated_main[building_type][j],output_prefix,data)
                 elif mode=='total':
+                    #print(building_type,'elect',elect_buildings_main[building_type][j]*weight_factor[building_type])
+                    #print(building_type,'heat',gas_buildings_main[building_type][j]*weight_factor[building_type])
                     total_electricity_buildings.append(elect_buildings_main[building_type][j]*weight_factor[building_type])
                     total_heating_buildings.append(gas_buildings_main[building_type][j]*weight_factor[building_type])
             if mode=='total':
                 output_prefix =  'total_'+epw_file_name+'_'
                 scenario_generated_main[building_type][j]['Total Electricity']=sum(total_electricity_buildings)
                 scenario_generated_main[building_type][j]['Total Heating']=sum(total_heating_buildings)
+                #print('total',j,output_prefix,sum(total_electricity_buildings),sum(total_heating_buildings))
                 #print(total_electricity_buildings[0][15],total_electricity_buildings[1][15],total_electricity_buildings[2][15],sum(total_electricity_buildings)[15],len(sum(total_electricity_buildings)))
                 #print(len(scenario_generated_main[building_type][j]))
                 scenario_reduction_per_year(scenario_generated_main[building_type][j],output_prefix,data)
