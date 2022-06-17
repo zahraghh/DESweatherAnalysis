@@ -44,7 +44,7 @@ def read_tmy3(tmy3_name):
         wmosn = first_line[5]
         comm1 = comm_line[1]
         tz = first_line[8]
-        print(tz)
+
         ############################
         # Read TMY3 data
         ############################
@@ -105,7 +105,7 @@ def read_datafile(file_name, skiplines):
 # adapted from https://github.com/SSESLab/laf/blob/master/LAF.py
 
 def read_csv(_df):
-    global GHRad, DNRad, DHRad, GHIll, DNIll, DHIll,  Wspeed
+    global GHRad, DNRad, DHRad, GHIll, DNIll, DHIll,  Wspeed, ExHorRad, Tdb, HorIR, ZenLum
     ############################
     # CSV file reading
     ############################
@@ -113,6 +113,13 @@ def read_csv(_df):
     GHRad = [round(i,3) for i in _df['GHI']]
     DNRad = [round(i,3) for i in _df['DNI']]
     DHRad = [round(i,3) for i in _df['DHI']]
+    ExHorRad = [round(i,3) for i in _df['DHI_extra']]
+    HorIR = [round(i,3) for i in _df['horiz_ir']]
+    GHIll = [round(i,3) for i in _df['GHI_illum']]
+    DNIll = [round(i,3) for i in _df['DNI_illum']]
+    DHIll = [round(i,3) for i in _df['DHI_illum']]
+    ZenLum = [round(i,3) for i in _df['zenith_illum']]
+
     if 'Wind Speed' in _df.keys():
         Wspeed = [round(i,3) for i in _df['Wind Speed']]
     for i in range(0, 8760):
@@ -121,7 +128,7 @@ def read_csv(_df):
     return _df
 
 def write_epw(save_path,file_name,df_):
-    global GHRad, DNRad, DHRad, Wspeed
+    global GHRad, DNRad, DHRad, GHIll, DNIll, DHIll,  Wspeed, ExHorRad, Tdb, HorIR, ZenLum
 
     OPFILE = os.path.join(save_path, file_name+'.epw')
     ofile = open(OPFILE, "w", newline='')
@@ -145,6 +152,18 @@ def write_epw(save_path,file_name,df_):
     DHRad = df_['DHI']
     if 'Wind Speed' in df_.keys():
         Wspeed =df_['Wind Speed']
+    if 'DHI_extra' in df_.keys():
+        ExHorRad = df_['DHI_extra']
+    if 'horiz_ir' in df_.keys():
+        HorIR = df_['horiz_ir']
+    if 'GHI_illum' in df_.keys():
+        GHIll = df_['GHI_illum']
+    if 'DNIll' in df_.keys():
+        DNIll = df_['DNI_illum']
+    if 'DHI_illum' in df_.keys():
+        DHIll = df_['DHI_illum']
+    if 'zenith_illum' in df_.keys():
+        ZenLum = df_['zenith_illum']
     for i in range(0, 8760):
         row = [int(Y[i]), int(M[i]), int(D[i]), int(HH[i]), int(MM[i]), DS,
                Tdb[i], Tdew[i], RH[i], Patm[i], ExHorRad[i], ExDirNormRad[i], HorIR[i],
@@ -182,10 +201,15 @@ def create_epw_files(path_test):
     epw_file_name_TMY3= os.path.join(os.path.join(os.path.join(path_test,'Weather files'),'TMYs'),list_tmys[-1]+'.epw')
     scenarios_path = os.path.join(path_test,'ScenarioGeneration')
     folder_path = os.path.join(path_test,city)
-    df_scenario_generated={}
-    for i_temp in range(num_scenarios):
-        for i_solar in range(num_scenarios):
-                df_scenario_generated['T_'+str(i_temp)+'_S_'+str(i_solar)]=pd.read_csv(os.path.join(scenarios_path,'T_'+str(i_temp)+'_S_'+str(i_solar)+'.csv'))
+    scenario_genrated = {}
+    for scenario in range(num_scenarios):
+        print('scenario', scenario)
+        save_path = os.path.join(path_test,'ScenarioGeneration')
+        scenario_genrated['SCN_'+str(scenario)]=pd.read_csv(os.path.join(save_path,'new_dependent_'+str(scenario)+'.csv'))
+    read_tmy3(epw_file_name_TMY3)
+    for scenario in range(num_scenarios):
+        df=read_csv(scenario_genrated['SCN_'+str(scenario)])
+        write_epw(scenarios_path,'SCN_'+str(scenario),df)
 
     dict_weather_csv = {}
     weather_data = {}
@@ -194,16 +218,19 @@ def create_epw_files(path_test):
         dict_weather_csv[year]=  pd.read_csv(os.path.join(folder_path,weather_data[year]+'.csv'))
         #print(min(dict_weather_csv[year]['Temperature']))
 
-    # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    # Global Variables
-    # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+    df_scenario_generated={}
+    for i_temp in range(num_scenarios):
+        for i_solar in range(num_scenarios):
+                df_scenario_generated['T_'+str(i_temp)+'_S_'+str(i_solar)]=pd.read_csv(os.path.join(scenarios_path,'T_'+str(i_temp)+'_S_'+str(i_solar)+'.csv'))
     read_tmy3(epw_file_name_TMY3)
-
     for year in range(start_year,end_year+1):
         df=read_csv(dict_weather_csv[year])
         write_epw(scenarios_path,weather_data[year],df)
+
+
+    read_tmy3(epw_file_name_TMY3)
     for i_temp in range(num_scenarios):
         for i_solar in range(num_scenarios):
             df=read_csv(df_scenario_generated['T_'+str(i_temp)+'_S_'+str(i_solar)])

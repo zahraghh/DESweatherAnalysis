@@ -53,9 +53,25 @@ def run_Eplus(path_test):
     dict_EPWs['TMYs']=list_tmys
     main_weather_epw = {}
     epw_names = []
-    for i_temp in range(num_scenarios):
-        for i_solar in range(num_scenarios):
-            epw_names.append('T_'+str(i_temp)+'_S_'+str(i_solar))
+    #for i_temp in range(num_scenarios):
+    #    for i_solar in range(num_scenarios):
+    #        epw_names.append('T_'+str(i_temp)+'_S_'+str(i_solar))
+    for scenario in range(num_scenarios):
+        epw_names.append('SCN_'+str(scenario))
+    for building_type in range(len(idf_names)):
+        for scenario in range(len(epw_names)):
+            idf_path =  os.path.join(output_directory, idf_names[building_type]+'.idf')
+            epw_path =  os.path.join(os.path.join(path_test,'ScenarioGeneration'),epw_names[scenario]+'.epw')
+            #idf = IDF(idf_path, epw_path)
+            #output_meter = idf.idfobjects['OUTPUT:METER:METERFILEONLY']
+            #timestep = idf.idfobjects['TIMESTEP']
+            #timestep.Number_of_Timesteps_per_Hour = 1
+            output_prefix =  idf_names[building_type]+'_'+epw_names[scenario]+'_'
+            #idf.run(output_directory=output_directory,output_prefix=output_prefix,output_suffix='C', expandobjects=True, readvars=True)
+            #subprocess.call([exefile, '-w', epw_path, idf_path,'-d',output_directory,'-p',output_prefix,'-r'])
+            df = subprocess.Popen([exefile, '-w', epw_path,'-d',output_directory,'-p',output_prefix,'-r',idf_path], stdout=subprocess.PIPE)
+            output, err = df.communicate()
+            print(scenario,output_prefix,' is done')
 
     for key in dict_EPWs.keys():
         for epw_file_name in dict_EPWs[key]:
@@ -76,19 +92,3 @@ def run_Eplus(path_test):
                 df = subprocess.Popen([exefile, '-w', epw_main_path,'-d',output_directory,'-p',output_prefix,'-r',idf_path], stdout=subprocess.PIPE)
                 output, err = df.communicate()
                 print(output_prefix,' is done')
-
-
-    for building_type in range(len(idf_names)):
-        for scenario in range(len(epw_names)):
-            idf_path =  os.path.join(output_directory, idf_names[building_type]+'.idf')
-            epw_path =  os.path.join(os.path.join(path_test,'ScenarioGeneration'),epw_names[scenario]+'.epw')
-            #idf = IDF(idf_path, epw_path)
-            #output_meter = idf.idfobjects['OUTPUT:METER:METERFILEONLY']
-            #timestep = idf.idfobjects['TIMESTEP']
-            #timestep.Number_of_Timesteps_per_Hour = 1
-            output_prefix =  idf_names[building_type]+'_'+epw_names[scenario]+'_'
-            #idf.run(output_directory=output_directory,output_prefix=output_prefix,output_suffix='C', expandobjects=True, readvars=True)
-            #subprocess.call([exefile, '-w', epw_path, idf_path,'-d',output_directory,'-p',output_prefix,'-r'])
-            df = subprocess.Popen([exefile, '-w', epw_path,'-d',output_directory,'-p',output_prefix,'-r',idf_path], stdout=subprocess.PIPE)
-            output, err = df.communicate()
-            print(scenario,output_prefix,' is done')

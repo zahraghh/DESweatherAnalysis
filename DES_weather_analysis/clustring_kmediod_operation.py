@@ -41,7 +41,10 @@ def kmedoid_clusters(path_test,mode):
     surf_azimuth = float(editable_data['solar_azimuth']) #panels azimuth degree
     idf_names= []
     thermal_eff_dict= {}
+    #thermal_SH_eff_dict={}
+    #thermal_HW_eff_dict={}
     weight_factor={}
+
     for i in range(int(editable_data['number_buildings'])):
         if 'building_name_'+str(i+1) in editable_data.keys():
             building_name = editable_data['building_name_'+str(i+1)]
@@ -53,11 +56,18 @@ def kmedoid_clusters(path_test,mode):
     start_year = int(editable_data['starting_year'])
     end_year = int(editable_data['ending_year'])
     epw_names = []
-    for i_temp in range(num_scenarios):
-        for i_solar in range(num_scenarios):
-            epw_names.append('T_'+str(i_temp)+'_S_'+str(i_solar))
+    for scenario in range(num_scenarios):
+        epw_names.append('SCN_'+str(scenario))
+
+    #epw_names = []
+    #for i_temp in range(num_scenarios):
+    #    if i_temp==0 or i_temp==5 or i_temp==9:
+    #        for i_solar in range(num_scenarios):
+    #            if i_solar==0 or i_solar==5 or i_solar==9:
+    #                epw_names.append('T_'+str(i_temp)+'_S_'+str(i_solar))
+    #epw_names = []
+    #epw_names.append('T_'+str(6)+'_S_'+str(0))
     demand_directory = os.path.join(path_test, 'IDFBuildingsFiles')
-    output_directory = os.path.join(path_test, 'IDFBuildingsFiles')
 
     # epw  main files
     dict_EPWs = {}
@@ -74,12 +84,12 @@ def kmedoid_clusters(path_test,mode):
         if 'FMY'+str(i+1)+'_name'  in editable_data.keys():
             FMY_name = editable_data['FMY'+str(i+1)+'_name']
             list_fmys.append(FMY_name)
-    dict_EPWs['AMYs']=list_years
-    dict_EPWs['FMYs']=list_fmys
-    dict_EPWs['TMYs']=list_tmys
+    #dict_EPWs['AMYs']=list_years
+    #dict_EPWs['FMYs']=list_fmys
+    #dict_EPWs['TMYs']=list_tmys
 
     global k
-    def scenario_reduction_per_year(scenario_genrated,name,weather_data):
+    def scenario_reduction_per_year(scenario_genrated,name,weather_data,year_index_scenario_0=None):
         global k
         days= 365
         features_scenarios = defaultdict(list)
@@ -211,21 +221,6 @@ def kmedoid_clusters(path_test,mode):
                     Scenario_generated_new[representative_day][i] = 0
             for k in range(2): # 2 uncertain inputs
                 scenario_data[k] = Scenario_generated_new[representative_day][24*k:24*(k+1)].copy()
-                #min_non_z = np.min(np.nonzero(scenario_data[k]))
-                #max_non_z = np.max(np.nonzero(scenario_data[k]))
-                #represent_gaps[k]= [i for i, x in enumerate(scenario_data[k][min_non_z:max_non_z+1]) if x == 0]
-                #ranges = sum((list(t) for t in zip(represent_gaps[k], represent_gaps[k][1:]) if t[0]+1 != t[1]), [])
-                #iranges = iter(represent_gaps[k][0:1] + ranges + represent_gaps[k][-1:])
-                #print('Present gaps are: ', representative_day,k, 'gaps', ', '.join([str(n) + '-' + str(next(iranges)) for n in iranges]))
-                #iranges = iter(represent_gaps[k][0:1] + ranges + represent_gaps[k][-1:])
-                #for n in iranges:
-                #    next_n = next(iranges)
-                #    if (next_n-n) == 0: #for data gaps of 1 hour, get the average value
-                #        scenario_data[k][n+min_non_z] = (scenario_data[k][min_non_z+n+1]+scenario_data[k][min_non_z+n-1])/2
-                #    elif (next_n-n) > 0  and (next_n-n) <= 6: #for data gaps of 1 hour to 4 hr, use interpolation and extrapolation
-                #        f_interpol_short= interp1d([n-1,next_n+1], [scenario_data[k][min_non_z+n-1],scenario_data[k][min_non_z+next_n+1]])
-                #        for m in range(n,next_n+1):
-                #            scenario_data[k][m+min_non_z] = f_interpol_short(m)
             data_represent_days_modified={'Electricity total (kWh)': scenario_data[0],
             'Heating (kWh)': scenario_data[1],
             'Percent %': round(sum_probability[representative_day]*100/sum(sum_probability),4)}
@@ -365,21 +360,7 @@ def kmedoid_clusters(path_test,mode):
                     Scenario_generated_new[representative_day][i] = 0
             for k in range(2): # 2 uncertain inputs
                 scenario_data[k] = Scenario_generated_new[representative_day][24*k:24*(k+1)].copy()
-                #min_non_z = np.min(np.nonzero(scenario_data[k]))
-                #zmax_non_z = np.max(np.nonzero(scenario_data[k]))
-                #represent_gaps[k]= [i for i, x in enumerate(scenario_data[k][min_non_z:max_non_z+1]) if x == 0]
-                #ranges = sum((list(t) for t in zip(represent_gaps[k], represent_gaps[k][1:]) if t[0]+1 != t[1]), [])
-                #iranges = iter(represent_gaps[k][0:1] + ranges + represent_gaps[k][-1:])
-                #print('Present gaps are: ', representative_day,k, 'gaps', ', '.join([str(n) + '-' + str(next(iranges)) for n in iranges]))
-                #iranges = iter(represent_gaps[k][0:1] + ranges + represent_gaps[k][-1:])
-                #for n in iranges:
-                #    next_n = next(iranges)
-                #    if (next_n-n) == 0: #for data gaps of 1 hour, get the average value
-                #        scenario_data[k][n+min_non_z] = (scenario_data[k][min_non_z+n+1]+scenario_data[k][min_non_z+n-1])/2
-                #    elif (next_n-n) > 0  and (next_n-n) <= 6: #for data gaps of 1 hour to 4 hr, use interpolation and extrapolation
-                #        f_interpol_short= interp1d([n-1,next_n+1], [scenario_data[k][min_non_z+n-1],scenario_data[k][min_non_z+next_n+1]])
-                #        for m in range(n,next_n+1):
-                #            scenario_data[k][m+min_non_z] = f_interpol_short(m)
+
             data_represent_days_modified={'Electricity total (kWh)': scenario_data[0],
             'Heating (kWh)': scenario_data[1],
             'Percent %': round(sum_probability[representative_day]*100/sum(sum_probability),4)}
@@ -390,47 +371,96 @@ def kmedoid_clusters(path_test,mode):
         represent_day = defaultdict(list)
         k=0
         days= 365
-
+        print(name[6:])
         for represent in range(int(editable_data['Cluster numbers'])+2):
-            for day in range(days):
-                data = scenario_genrated[day*24:(day+1)*24]
-                data_1 = data['Total Electricity']
-                data_2 = data['Total Heating']
-                #Total electricity and heating
-                daily_list =list(chain(data_1.astype('float', copy=False),data_2.astype('float', copy=False)))
-                #if round(all_representative_days[represent]['Electricity total (kWh)'][10],0)==round(daily_list[10],0):
-                #    print('elect',represent, day, round(all_representative_days[represent]['Electricity total (kWh)'][10],0),round(daily_list[10],0))
-                #if round(all_representative_days[represent]['Heating (kWh)'][6],0)==round(daily_list[30],0):
-                #    print('heat',represent, day, round(all_representative_days[represent]['Heating (kWh)'][6],0),round(daily_list[30],0))
-                if round(all_representative_days[represent]['Electricity total (kWh)'][10],0)==round(daily_list[10],0) and round(all_representative_days[represent]['Heating (kWh)'][6],0)==round(daily_list[30],0) :
-                    represent_day[represent] = day
-                    data_temp = []
-                    data_dni = []
-                    data_ghi = []
-                    data_dhi = []
-                    data_wind_speed = []
-                    poa_components_vector = []
-                    poa_global = []
-                    hour = 0
-                    for index_in_year in range(day*24,(day+1)*24):
-                        data_temp.append(weather_data['temp_air'].tolist()[index_in_year])
-                        data_dni.append(weather_data['dni'].tolist()[index_in_year])
-                        data_ghi.append(weather_data['ghi'].tolist()[index_in_year])
-                        data_dhi.append(weather_data['dhi'].tolist()[index_in_year])
-                        data_wind_speed.append(weather_data['wind_speed'].tolist()[index_in_year])
-                        dti =  datetime.datetime(weather_data['year'].tolist()[index_in_year], weather_data['month'].tolist()[index_in_year], weather_data['day'].tolist()[index_in_year],hour)
-                        solar_position = get_solarposition(dti,lat, lon, altitude, pressure=None, method='nrel_numpy', temperature=12)
-                        solar_zenith = solar_position['zenith']
-                        solar_azimuth =  solar_position['azimuth']
-                        poa_components_vector.append(get_total_irradiance(surf_tilt, surf_azimuth,
-                                                     solar_zenith[0], solar_azimuth[0],
-                                                    float(weather_data['dni'].tolist()[index_in_year]), float(weather_data['ghi'].tolist()[index_in_year]), float(weather_data['dhi'].tolist()[index_in_year]), dni_extra=None, airmass=None,
-                                                     albedo=.25, surface_type=None,
-                                                     model='isotropic',
-                                                     model_perez='allsitescomposite1990'))
-                        poa_global.append(poa_components_vector[hour]['poa_global'])
-                        hour +=1
-                    for represent in range(int(editable_data['Cluster numbers'])+2):
+            if name[6]=='T' and name[6:]!='T_0_S_0_':
+                day= year_index_scenario_0[represent][0]
+                data_temp = []
+                data_dni = []
+                data_ghi = []
+                data_dhi = []
+                data_wind_speed = []
+                poa_components_vector = []
+                poa_global = []
+                hour = 0
+                for index_in_year in range(day*24,(day+1)*24):
+                    data_temp.append(weather_data['temp_air'].tolist()[index_in_year])
+                    data_dni.append(weather_data['dni'].tolist()[index_in_year])
+                    data_ghi.append(weather_data['ghi'].tolist()[index_in_year])
+                    data_dhi.append(weather_data['dhi'].tolist()[index_in_year])
+                    data_wind_speed.append(weather_data['wind_speed'].tolist()[index_in_year])
+                    dti =  datetime.datetime(weather_data['year'].tolist()[index_in_year], weather_data['month'].tolist()[index_in_year], weather_data['day'].tolist()[index_in_year],hour)
+                    solar_position = get_solarposition(dti,lat, lon, altitude, pressure=None, method='nrel_numpy', temperature=12)
+                    solar_zenith = solar_position['zenith']
+                    solar_azimuth =  solar_position['azimuth']
+                    poa_components_vector.append(get_total_irradiance(surf_tilt, surf_azimuth,
+                                                 solar_zenith[0], solar_azimuth[0],
+                                                float(weather_data['dni'].tolist()[index_in_year]), float(weather_data['ghi'].tolist()[index_in_year]), float(weather_data['dhi'].tolist()[index_in_year]), dni_extra=None, airmass=None,
+                                                 albedo=.25, surface_type=None,
+                                                 model='isotropic',
+                                                 model_perez='allsitescomposite1990'))
+                    poa_global.append(poa_components_vector[hour]['poa_global'])
+                    hour +=1
+                #for represent in range(int(editable_data['Cluster numbers'])+2):
+                #print(data_temp)
+                all_representative_days[represent]['temp_air']=data_temp
+                all_representative_days[represent]['dni']=data_dni
+                all_representative_days[represent]['ghi']=data_ghi
+                all_representative_days[represent]['dhi']=data_dhi
+                all_representative_days[represent]['wind_speed']=data_wind_speed
+                all_representative_days[represent]['gti']=poa_global
+                all_representative_days[represent].to_csv(os.path.join(representative_days_path,name + 'Represent_days_modified_'+str(represent)+ '.csv'), index=False)
+            else:
+                for day in range(days):
+                    save_day = 'no'
+                    data = scenario_genrated[day*24:(day+1)*24]
+                    data_1 = data['Total Electricity']
+                    data_2 = data['Total Heating']
+                    #Total electricity and heating
+                    daily_list =list(chain(data_1.astype('float', copy=False),data_2.astype('float', copy=False)))
+                    if represent==int(editable_data['Cluster numbers']):
+                        if round(all_representative_days[represent]['Electricity total (kWh)'][10],0)==round(daily_list[10],0):
+                            save_day = 'yes'
+                        elif  round(all_representative_days[represent]['Heating (kWh)'][6],0)==round(daily_list[30],0):
+                            save_day = 'yes'
+                    elif represent==int(editable_data['Cluster numbers'])+1:
+                        if  round(all_representative_days[represent]['Heating (kWh)'][6],0)==round(daily_list[30],0):
+                            save_day = 'yes'
+                        elif round(all_representative_days[represent]['Electricity total (kWh)'][10],0)==round(daily_list[10],0):
+                            save_day = 'yes'
+                    else:
+                        if round(all_representative_days[represent]['Electricity total (kWh)'][10],0)==round(daily_list[10],0) and round(all_representative_days[represent]['Heating (kWh)'][6],0)==round(daily_list[30],0):
+                            save_day = 'yes'
+                    if save_day == 'yes':
+                        represent_day[represent].append(day)
+                        data_temp = []
+                        data_dni = []
+                        data_ghi = []
+                        data_dhi = []
+                        data_wind_speed = []
+                        poa_components_vector = []
+                        poa_global = []
+                        hour = 0
+                        for index_in_year in range(day*24,(day+1)*24):
+                            data_temp.append(weather_data['temp_air'].tolist()[index_in_year])
+                            data_dni.append(weather_data['dni'].tolist()[index_in_year])
+                            data_ghi.append(weather_data['ghi'].tolist()[index_in_year])
+                            data_dhi.append(weather_data['dhi'].tolist()[index_in_year])
+                            data_wind_speed.append(weather_data['wind_speed'].tolist()[index_in_year])
+                            dti =  datetime.datetime(weather_data['year'].tolist()[index_in_year], weather_data['month'].tolist()[index_in_year], weather_data['day'].tolist()[index_in_year],hour)
+                            solar_position = get_solarposition(dti,lat, lon, altitude, pressure=None, method='nrel_numpy', temperature=12)
+                            solar_zenith = solar_position['zenith']
+                            solar_azimuth =  solar_position['azimuth']
+                            poa_components_vector.append(get_total_irradiance(surf_tilt, surf_azimuth,
+                                                         solar_zenith[0], solar_azimuth[0],
+                                                        float(weather_data['dni'].tolist()[index_in_year]), float(weather_data['ghi'].tolist()[index_in_year]), float(weather_data['dhi'].tolist()[index_in_year]), dni_extra=None, airmass=None,
+                                                         albedo=.25, surface_type=None,
+                                                         model='isotropic',
+                                                         model_perez='allsitescomposite1990'))
+                            poa_global.append(poa_components_vector[hour]['poa_global'])
+                            hour +=1
+                        #for represent in range(int(editable_data['Cluster numbers'])+2):
+                        #print(data_temp)
                         all_representative_days[represent]['temp_air']=data_temp
                         all_representative_days[represent]['dni']=data_dni
                         all_representative_days[represent]['ghi']=data_ghi
@@ -438,24 +468,8 @@ def kmedoid_clusters(path_test,mode):
                         all_representative_days[represent]['wind_speed']=data_wind_speed
                         all_representative_days[represent]['gti']=poa_global
                         all_representative_days[represent].to_csv(os.path.join(representative_days_path,name + 'Represent_days_modified_'+str(represent)+ '.csv'), index=False)
-                    break
+                        break
         return data_all_labels, represent_day
-
-    cluster_numbers= int(editable_data['Cluster numbers'])+2
-    temps= []
-    gtis=[]
-    for scenario in range(len(epw_names)):
-        #output_prefix =  building_type+'_'+epw_names[scenario]+'_'
-        weather_path = os.path.join(scenarios_path,epw_names[scenario]+'.csv')
-        data = pd.read_csv(weather_path)
-        if scenario<10:
-            gtis.append(round(np.mean(data['GTI']),1))
-            #print(epw_names[scenario],'GTI',np.mean(data['GTI']))
-        if scenario%10==0:
-            #print(epw_names[scenario],'Temp',np.mean(data['Temperature']))
-            temps.append(round(np.mean(data['Temperature']),1))
-    print('gti', gtis)
-    print('temps',temps)
 
     scenario_generated_main = defaultdict(list)
     elect_buildings_main = defaultdict(list)
@@ -470,6 +484,8 @@ def kmedoid_clusters(path_test,mode):
                 data = pd.read_csv(demand_data_path)
                 elect_data = ((data['Electricity:Facility [J](Hourly)']-data['Heating:Electricity [J](Hourly)'])*JtokWh)
                 heat_data = (data['Gas:Facility [J](Hourly)']*thermal_eff_dict[building_type]+data['Heating:Electricity [J](Hourly)'])*JtokWh
+                #heat_data = (data['WaterSystems:Gas [J](Hourly) ']*thermal_eff_dict[building_type] +
+                #data['Gas:HVAC [J](Hourly)']*thermal_eff_dict[building_type] + data['Heating:Electricity [J](Hourly)'])*JtokWh
                 #print(output_prefix,elect_data,heat_data )
                 #data['Total Electricity']=elect_data
                 #data['Total Heating']=heat_data
@@ -478,6 +494,57 @@ def kmedoid_clusters(path_test,mode):
                 elect_annual_main[building_type].append(sum(elect_data))
                 gas_buildings_main[building_type].append(heat_data)
                 gas_annual_main[building_type].append(sum(heat_data))
+
+    scenario_probability = defaultdict(list)
+    scenario_generated = defaultdict(list)
+    elect_buildings = defaultdict(list)
+    gas_buildings = defaultdict(list)
+    elect_annual= defaultdict(list)
+    gas_annual = defaultdict(list)
+    for building_type in idf_names:
+        for scenario in range(len(epw_names)):
+            output_prefix =  building_type+'_'+epw_names[scenario]+'_mtr.csv'
+            demand_data_path = os.path.join(demand_directory, output_prefix)
+            data = pd.read_csv(demand_data_path)
+            elect_data = (data['Electricity:Facility [J](Hourly)']-data['Heating:Electricity [J](Hourly)'])*JtokWh
+            heat_data = (data['Gas:Facility [J](Hourly)']*thermal_eff_dict[building_type]+data['Heating:Electricity [J](Hourly)'])*JtokWh
+            #data['Total Electricity']=elect_data
+            #data['Total Heating']=heat_data
+            scenario_generated[building_type].append(data)
+            scenario_generated[building_type].append(data)
+            elect_buildings[building_type].append(elect_data)
+            elect_annual[building_type].append(sum(elect_data))
+            gas_buildings[building_type].append(heat_data)
+            gas_annual[building_type].append(sum(heat_data))
+            #print(scenario,output_prefix,gas_buildings[building_type][scenario][0],elect_buildings[building_type][scenario][0])
+    for scenario in range(len(epw_names)):
+        output_prefix =  building_type+'_'+epw_names[scenario]+'_'
+        weather_path = os.path.join(scenarios_path,epw_names[scenario]+'.epw')
+        data, meta = EPW_to_csv.read_epw(weather_path)
+        data.to_csv(os.path.join(scenarios_path,epw_names[scenario]+'.csv'), index = False, header=True)
+        total_electricity_buildings = []
+        total_heating_buildings = []
+        for building_type in idf_names:
+            if mode=='seperate':
+                output_prefix =  building_type+'_'+epw_names[scenario]+'_'
+                scenario_generated[building_type][scenario]['Total Electricity']=elect_buildings[building_type][scenario]*weight_factor[building_type]
+                scenario_generated[building_type][scenario]['Total Heating']=gas_buildings[building_type][scenario]*weight_factor[building_type]
+                scenario_reduction_per_year(scenario_generated[building_type][scenario],output_prefix,data)
+            elif mode=='total':
+                total_electricity_buildings.append(elect_buildings[building_type][scenario]*weight_factor[building_type])
+                total_heating_buildings.append(gas_buildings[building_type][scenario]*weight_factor[building_type])
+        if mode=='total':
+            output_prefix =  'total_'+epw_names[scenario]+'_'
+            scenario_generated[building_type][scenario]['Total Electricity']=sum(total_electricity_buildings)
+            scenario_generated[building_type][scenario]['Total Heating']=sum(total_heating_buildings)
+            #print(scenario_generated[building_type][scenario].keys())
+            if scenario==0:
+                data_all_labels, represent_day=scenario_reduction_per_year(scenario_generated[building_type][scenario],output_prefix,data)
+                year_index_scenario_0 = represent_day
+                print(year_index_scenario_0)
+            else:
+                scenario_reduction_per_year(scenario_generated[building_type][scenario],output_prefix,data,year_index_scenario_0)
+    sys.exit()
     j=0
     for key in dict_EPWs.keys():
         for epw_file_name in dict_EPWs[key]:
@@ -513,49 +580,3 @@ def kmedoid_clusters(path_test,mode):
                 #print(len(scenario_generated_main[building_type][j]))
                 scenario_reduction_per_year(scenario_generated_main[building_type][j],output_prefix,data)
             j = j+1
-
-
-    scenario_probability = defaultdict(list)
-    scenario_generated = defaultdict(list)
-    elect_buildings = defaultdict(list)
-    gas_buildings = defaultdict(list)
-    elect_annual= defaultdict(list)
-    gas_annual = defaultdict(list)
-    for building_type in idf_names:
-        for scenario in range(len(epw_names)):
-            output_prefix =  building_type+'_'+epw_names[scenario]+'_mtr.csv'
-            demand_data_path = os.path.join(demand_directory, output_prefix)
-            data = pd.read_csv(demand_data_path)
-            elect_data = (data['Electricity:Facility [J](Hourly)']-data['Heating:Electricity [J](Hourly)'])*JtokWh
-            heat_data = (data['Gas:Facility [J](Hourly)']*thermal_eff_dict[building_type]+data['Heating:Electricity [J](Hourly)'])*JtokWh
-            #data['Total Electricity']=elect_data
-            #data['Total Heating']=heat_data
-            scenario_generated[building_type].append(data)
-            scenario_generated[building_type].append(data)
-            elect_buildings[building_type].append(elect_data)
-            elect_annual[building_type].append(sum(elect_data))
-            gas_buildings[building_type].append(heat_data)
-            gas_annual[building_type].append(sum(heat_data))
-            #print(scenario,output_prefix,gas_buildings[building_type][scenario][0],elect_buildings[building_type][scenario][0])
-    for scenario in range(len(epw_names)):
-        output_prefix =  building_type+'_'+epw_names[scenario]+'_'
-        weather_path = os.path.join(scenarios_path,epw_names[scenario]+'.epw')
-        data, meta = EPW_to_csv.read_epw(weather_path)
-        data.to_csv(os.path.join(scenarios_path,epw_file_name+'.csv'), index = False, header=True)
-        total_electricity_buildings = []
-        total_heating_buildings = []
-        for building_type in idf_names:
-            if mode=='seperate':
-                output_prefix =  building_type+'_'+epw_names[scenario]+'_'
-                scenario_generated[building_type][scenario]['Total Electricity']=elect_buildings[building_type][scenario]*weight_factor[building_type]
-                scenario_generated[building_type][scenario]['Total Heating']=gas_buildings[building_type][scenario]*weight_factor[building_type]
-                scenario_reduction_per_year(scenario_generated[building_type][scenario],output_prefix,data)
-            elif mode=='total':
-                total_electricity_buildings.append(elect_buildings[building_type][scenario]*weight_factor[building_type])
-                total_heating_buildings.append(gas_buildings[building_type][scenario]*weight_factor[building_type])
-        if mode=='total':
-            output_prefix =  'total_'+epw_names[scenario]+'_'
-            scenario_generated[building_type][scenario]['Total Electricity']=sum(total_electricity_buildings)
-            scenario_generated[building_type][scenario]['Total Heating']=sum(total_heating_buildings)
-            #print(scenario_generated[building_type][scenario].keys())
-            scenario_reduction_per_year(scenario_generated[building_type][scenario],output_prefix,data)
